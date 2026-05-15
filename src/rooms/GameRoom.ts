@@ -24,7 +24,7 @@ import { syncGameState } from "../schemas/syncGameState.js";
 import { ColyseusEventPublisher } from "./ColyseusEventPublisher.js";
 import type { RoomDependencies } from "./roomOptions.js";
 
-export class GameRoom extends Room<{ state: GameState }> {
+export class GameRoom extends Room<GameState> {
   private dependencies!: RoomDependencies;
   private session!: GameSession;
   private matchController!: MatchController;

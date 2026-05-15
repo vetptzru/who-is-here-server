@@ -15,9 +15,9 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@colyseus/schema": "^4.0.25",
-    "@colyseus/ws-transport": "^0.17.13",
-    "colyseus": "^0.17.10",
+    "@colyseus/schema": "^3.0.76",
+    "@colyseus/ws-transport": "^0.16.5",
+    "colyseus": "^0.16.4",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pino": "^10.3.1",

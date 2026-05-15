@@ -3,7 +3,7 @@ import { setNameSchema, setReadySchema } from "../messages/clientMessages.js";
 import { LobbyPlayerState, LobbyState } from "../schemas/LobbyState.js";
 import type { RoomDependencies } from "./roomOptions.js";
 
-export class LobbyRoom extends Room<{ state: LobbyState }> {
+export class LobbyRoom extends Room<LobbyState> {
   private dependencies!: RoomDependencies;
 
   public onCreate(options: Partial<RoomDependencies>): void {
@@ -29,21 +29,8 @@ export class LobbyRoom extends Room<{ state: LobbyState }> {
       }
     });
 
-    this.onMessage("start_match", (client) => {
-      if (!this.canStart(client.sessionId)) {
-        return;
-      }
-
-      this.state.status = "starting";
-      this.broadcast("match_ready", {
-        roomName: "game",
-        players: Array.from(this.state.players.values()).map((player) => ({
-          id: player.id,
-          name: player.name,
-        })),
-      });
-      this.updateRegistry();
-    });
+    this.onMessage("start_match", (client) => this.startMatch(client));
+    this.onMessage("start_game", (client) => this.startMatch(client));
   }
 
   public onJoin(client: Client): void {
@@ -73,6 +60,46 @@ export class LobbyRoom extends Room<{ state: LobbyState }> {
     const players = Array.from(this.state.players.values());
     const host = this.state.players.get(clientId);
     return Boolean(host?.isHost) && players.length > 0 && players.every((player) => player.isReady);
+  }
+
+  private startMatch(client: Client): void {
+    if (!this.canStart(client.sessionId)) {
+      client.send("start_match_result", {
+        ok: false,
+        reason: this.getStartBlockedReason(client.sessionId),
+      });
+      return;
+    }
+
+    this.state.status = "starting";
+    client.send("start_match_result", {
+      ok: true,
+      roomName: "game",
+    });
+    this.broadcast("match_ready", {
+      roomName: "game",
+      players: Array.from(this.state.players.values()).map((player) => ({
+        id: player.id,
+        name: player.name,
+      })),
+    });
+    this.updateRegistry();
+  }
+
+  private getStartBlockedReason(clientId: string): string {
+    const players = Array.from(this.state.players.values());
+    const requester = this.state.players.get(clientId);
+    if (!requester?.isHost) {
+      return "only_host_can_start";
+    }
+    if (players.length === 0) {
+      return "no_players";
+    }
+    if (players.some((player) => !player.isReady)) {
+      return "players_not_ready";
+    }
+
+    return "unknown";
   }
 
   private updateRegistry(): void {
