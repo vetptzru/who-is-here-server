@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { monitor } from "@colyseus/monitor";
 import { Server } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { loadEnv } from "./config/env.js";
@@ -14,6 +15,10 @@ const main = async (): Promise<void> => {
   const logger = createLogger();
   const registry = new RoomRegistry();
   const app = createHttpApp({ registry, version: "0.1.0" });
+  if (env.COLYSEUS_MONITOR_ENABLED) {
+    app.use("/colyseus", monitor());
+    logger.info("Colyseus monitor mounted", { path: "/colyseus" });
+  }
   const httpServer = createServer(app);
   const gameServer = new Server({
     transport: new WebSocketTransport({
