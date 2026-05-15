@@ -1,0 +1,100 @@
+{
+  "id": "house_01",
+  "name": "House 01",
+  "spawnPoints": [
+    { "id": "spawn_1", "position": { "x": -10, "y": 1, "z": 0 } },
+    { "id": "spawn_2", "position": { "x": -11, "y": 1, "z": 1 } },
+    { "id": "spawn_3", "position": { "x": -11, "y": 1, "z": -1 } },
+    { "id": "spawn_4", "position": { "x": -12, "y": 1, "z": 0 } }
+  ],
+  "rooms": [
+    {
+      "id": "living_room",
+      "name": "Living Room",
+      "center": { "x": 3, "y": 1, "z": 5 },
+      "radius": 4
+    },
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "center": { "x": 8, "y": 1, "z": 8 },
+      "radius": 3
+    }
+  ],
+  "doors": [
+    {
+      "id": "front_door",
+      "roomA": "outside",
+      "roomB": "living_room",
+      "isLockedDuringHunt": true
+    },
+    {
+      "id": "bedroom_door",
+      "roomA": "living_room",
+      "roomB": "bedroom",
+      "isLockedDuringHunt": false
+    }
+  ],
+  "lights": [
+    {
+      "id": "living_room_light",
+      "roomId": "living_room",
+      "switchId": "living_room_switch"
+    },
+    {
+      "id": "bedroom_light",
+      "roomId": "bedroom",
+      "switchId": "bedroom_switch"
+    }
+  ],
+  "hidingSpots": [
+    {
+      "id": "closet_01",
+      "roomId": "bedroom",
+      "position": { "x": 5, "y": 1, "z": 8 }
+    }
+  ],
+  "evidenceSpots": [
+    {
+      "id": "living_room_emf",
+      "roomId": "living_room",
+      "evidenceType": "emf",
+      "position": { "x": 3, "y": 1, "z": 5 }
+    },
+    {
+      "id": "living_room_freezing",
+      "roomId": "living_room",
+      "evidenceType": "freezing",
+      "position": { "x": 2, "y": 1, "z": 4 }
+    },
+    {
+      "id": "living_room_fingerprints",
+      "roomId": "living_room",
+      "evidenceType": "fingerprints",
+      "position": { "x": 4, "y": 1, "z": 5 }
+    },
+    {
+      "id": "bedroom_emf",
+      "roomId": "bedroom",
+      "evidenceType": "emf",
+      "position": { "x": 8, "y": 1, "z": 8 }
+    },
+    {
+      "id": "bedroom_freezing",
+      "roomId": "bedroom",
+      "evidenceType": "freezing",
+      "position": { "x": 7, "y": 1, "z": 8 }
+    },
+    {
+      "id": "bedroom_fingerprints",
+      "roomId": "bedroom",
+      "evidenceType": "fingerprints",
+      "position": { "x": 9, "y": 1, "z": 8 }
+    }
+  ],
+  "exitZone": {
+    "id": "exit_zone",
+    "position": { "x": -10, "y": 1, "z": 0 },
+    "radius": 3
+  }
+}

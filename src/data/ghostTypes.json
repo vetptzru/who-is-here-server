@@ -1,0 +1,16 @@
+[
+  {
+    "id": "shade",
+    "name": "Shade",
+    "evidencePool": ["emf", "freezing", "fingerprints"],
+    "aggression": 1,
+    "activity": 1
+  },
+  {
+    "id": "wraith",
+    "name": "Wraith",
+    "evidencePool": ["emf", "freezing", "fingerprints"],
+    "aggression": 2,
+    "activity": 2
+  }
+]

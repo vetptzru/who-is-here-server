@@ -1,0 +1,18 @@
+[
+  {
+    "id": "flashlight",
+    "name": "Flashlight"
+  },
+  {
+    "id": "emf",
+    "name": "EMF Reader"
+  },
+  {
+    "id": "thermometer",
+    "name": "Thermometer"
+  },
+  {
+    "id": "camera",
+    "name": "UV Camera"
+  }
+]

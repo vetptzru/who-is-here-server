@@ -1,0 +1,138 @@
+import type { GameModel, GhostTypeDefinition, Player } from "../domain/models.js";
+import type { GhostTypeRepository, MapRepository, RandomSource } from "../domain/ports.js";
+import type { ItemId, Vector3 } from "../domain/types.js";
+
+export type GameSessionOptions = {
+  mapId: string;
+  mapRepository: MapRepository;
+  ghostTypeRepository: GhostTypeRepository;
+  random: RandomSource;
+};
+
+export class GameSession {
+  private readonly state: GameModel;
+
+  public constructor(private readonly options: GameSessionOptions) {
+    this.state = {
+      players: new Map(),
+      ghost: {
+        ghostType: "default",
+        state: "idle",
+        roomId: "",
+        aggression: 1,
+        activity: 1,
+        position: { x: 0, y: 1, z: 0 },
+        targetPlayerId: "",
+        evidence: [],
+      },
+      doors: new Map(),
+      lights: new Map(),
+      matchPhase: "waiting",
+      matchTimeSec: 0,
+      mapId: options.mapId,
+      discoveredEvidence: [],
+      activeHuntUntilMs: 0,
+      huntCooldownUntilMs: 0,
+    };
+  }
+
+  public get snapshot(): GameModel {
+    return this.state;
+  }
+
+  public addPlayer(id: string, name = "Investigator"): Player {
+    const spawn = this.state.map?.spawnPoints[this.state.players.size]?.position ?? { x: 0, y: 1, z: 0 };
+    const player: Player = {
+      id,
+      name,
+      position: { ...spawn },
+      rotY: 0,
+      sanity: 100,
+      isAlive: true,
+      isReady: false,
+      isInHouse: false,
+      inventory: ["flashlight", "emf", "thermometer", "camera"],
+    };
+
+    this.state.players.set(id, player);
+    return player;
+  }
+
+  public removePlayer(id: string): void {
+    this.state.players.delete(id);
+    if (this.state.ghost.targetPlayerId === id) {
+      this.state.ghost.targetPlayerId = "";
+    }
+  }
+
+  public renamePlayer(id: string, name: string): void {
+    const player = this.requirePlayer(id);
+    player.name = name;
+  }
+
+  public setReady(id: string, isReady: boolean): void {
+    const player = this.requirePlayer(id);
+    player.isReady = isReady;
+  }
+
+  public movePlayer(id: string, position: Vector3, rotY: number): void {
+    const player = this.requirePlayer(id);
+    if (!player.isAlive || this.state.matchPhase === "finished") {
+      return;
+    }
+
+    player.position = position;
+    player.rotY = rotY;
+    player.isInHouse = position.x > -8;
+  }
+
+  public hasItem(playerId: string, itemId: ItemId): boolean {
+    return this.requirePlayer(playerId).inventory.includes(itemId);
+  }
+
+  public async initialize(): Promise<void> {
+    const [map, ghostTypes] = await Promise.all([
+      this.options.mapRepository.getById(this.options.mapId),
+      this.options.ghostTypeRepository.getAll(),
+    ]);
+    const ghostType = this.pickGhostType(ghostTypes);
+    const ghostRoom = this.options.random.pick(map.rooms);
+
+    this.state.map = map;
+    this.state.mapId = map.id;
+    this.state.doors = new Map(map.doors.map((door) => [door.id, { ...door }]));
+    this.state.lights = new Map(map.lights.map((light) => [light.id, { ...light }]));
+    this.state.ghost = {
+      ghostType: ghostType.id,
+      state: "idle",
+      roomId: ghostRoom.id,
+      aggression: ghostType.aggression,
+      activity: ghostType.activity,
+      position: { ...ghostRoom.center },
+      targetPlayerId: "",
+      evidence: this.options.random.pickMany(ghostType.evidencePool, 2),
+    };
+
+    for (const [index, player] of Array.from(this.state.players.values()).entries()) {
+      const spawn = map.spawnPoints[index % map.spawnPoints.length]?.position ?? { x: 0, y: 1, z: 0 };
+      player.position = { ...spawn };
+    }
+  }
+
+  private pickGhostType(ghostTypes: GhostTypeDefinition[]): GhostTypeDefinition {
+    if (ghostTypes.length === 0) {
+      throw new Error("No ghost types configured");
+    }
+
+    return this.options.random.pick(ghostTypes);
+  }
+
+  private requirePlayer(id: string): Player {
+    const player = this.state.players.get(id);
+    if (!player) {
+      throw new Error(`Player ${id} not found`);
+    }
+
+    return player;
+  }
+}
