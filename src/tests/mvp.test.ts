@@ -60,11 +60,13 @@ const createState = (): GameModel => ({
         name: "Player",
         position: { x: 3, y: 1, z: 5 },
         rotY: 0,
+        lookPitch: 0,
         sanity: 35,
         isAlive: true,
         isReady: true,
         isInHouse: true,
         inventory: ["flashlight", "emf", "thermometer", "camera"],
+        flashlightOn: false,
       },
     ],
   ]),
@@ -80,9 +82,9 @@ const createState = (): GameModel => ({
   },
   doors: new Map([
     [
-      "front_door",
+      "door_front",
       {
-        id: "front_door",
+        id: "door_front",
         roomA: "outside",
         roomB: "living_room",
         isOpen: false,
@@ -109,7 +111,7 @@ const createState = (): GameModel => ({
     id: "house_01",
     name: "House 01",
     spawnPoints: [{ id: "spawn_1", position: { x: 0, y: 1, z: 0 } }],
-    rooms: [{ id: "living_room", name: "Living Room", center: { x: 3, y: 1, z: 5 }, radius: 4 }],
+    rooms: [{ id: "living_room", name: "Living Room", center: { x: 0, y: 1, z: 0 }, radius: 7 }],
     doors: [],
     lights: [],
     hidingSpots: [],
@@ -153,8 +155,8 @@ test("interaction system toggles a door", () => {
   const state = createState();
   const interactions = new InteractionSystem(state, logger);
 
-  assert.equal(interactions.interact("p1", "front_door", "toggle"), true);
-  assert.equal(state.doors.get("front_door")?.isOpen, true);
+  assert.equal(interactions.interact("p1", "door_front", "toggle"), true);
+  assert.equal(state.doors.get("door_front")?.isOpen, true);
 });
 
 test("evidence system discovers server-selected evidence", () => {
@@ -182,7 +184,7 @@ test("hunt system starts, locks door and kills target on contact", () => {
   hunt.tick(0.1);
 
   assert.equal(state.matchPhase, "hunt");
-  assert.equal(state.doors.get("front_door")?.isLocked, true);
+  assert.equal(state.doors.get("door_front")?.isLocked, true);
   assert.equal(state.players.get("p1")?.isAlive, false);
   assert.ok(events.emitted.includes("hunt_started"));
   assert.ok(events.emitted.includes("player_dead"));

@@ -13,6 +13,7 @@ export class InteractionSystem {
 
   public interact(playerId: string, objectId: string, interactionType: InteractionType): boolean {
     const player = this.state.players.get(playerId);
+
     if (!player || !this.canInteract(player)) {
       return false;
     }

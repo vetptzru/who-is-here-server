@@ -119,7 +119,12 @@ export class GameRoom extends Room<GameState> {
 
     this.onMessage("move", (client, payload: unknown) => {
       const message = moveSchema.parse(payload);
-      this.session.movePlayer(client.sessionId, { x: message.x, y: message.y, z: message.z }, message.rotY);
+      this.session.movePlayer(
+        client.sessionId,
+        { x: message.x, y: message.y, z: message.z },
+        message.rotY,
+        message.lookPitch,
+      );
       this.sync();
     });
 
@@ -132,7 +137,11 @@ export class GameRoom extends Room<GameState> {
     this.onMessage("use_item", (client, payload: unknown) => {
       const message = useItemSchema.parse(payload);
       if (message.action === "primary") {
-        this.evidenceSystem.useItem(client.sessionId, message.itemId);
+        if (message.itemId === "flashlight") {
+          this.session.toggleFlashlight(client.sessionId);
+        } else {
+          this.evidenceSystem.useItem(client.sessionId, message.itemId);
+        }
       }
       this.sync();
     });

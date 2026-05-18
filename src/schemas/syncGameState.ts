@@ -23,10 +23,12 @@ export const syncGameState = (target: GameState, source: GameModel): void => {
     state.y = player.position.y;
     state.z = player.position.z;
     state.rotY = player.rotY;
+    state.lookPitch = player.lookPitch;
     state.sanity = player.sanity;
     state.isAlive = player.isAlive;
     state.isReady = player.isReady;
     state.isInHouse = player.isInHouse;
+    state.flashlightOn = player.flashlightOn;
     state.inventory.clear();
     state.inventory.push(...player.inventory);
     target.players.set(player.id, state);

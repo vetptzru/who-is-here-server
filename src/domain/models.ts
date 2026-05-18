@@ -12,11 +12,14 @@ export type Player = {
   name: string;
   position: Vector3;
   rotY: number;
+  /** Градусы, наклон «вверх/вниз» взгляда (как pitch камеры). */
+  lookPitch: number;
   sanity: number;
   isAlive: boolean;
   isReady: boolean;
   isInHouse: boolean;
   inventory: ItemId[];
+  flashlightOn: boolean;
 };
 
 export type Ghost = {

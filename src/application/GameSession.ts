@@ -47,11 +47,13 @@ export class GameSession {
       name,
       position: { ...spawn },
       rotY: 0,
+      lookPitch: 0,
       sanity: 100,
       isAlive: true,
       isReady: false,
       isInHouse: false,
       inventory: ["flashlight", "emf", "thermometer", "camera"],
+      flashlightOn: false,
     };
 
     this.state.players.set(id, player);
@@ -75,7 +77,7 @@ export class GameSession {
     player.isReady = isReady;
   }
 
-  public movePlayer(id: string, position: Vector3, rotY: number): void {
+  public movePlayer(id: string, position: Vector3, rotY: number, lookPitch = 0): void {
     const player = this.requirePlayer(id);
     if (!player.isAlive || this.state.matchPhase === "finished") {
       return;
@@ -83,7 +85,19 @@ export class GameSession {
 
     player.position = position;
     player.rotY = rotY;
+    player.lookPitch = lookPitch;
     player.isInHouse = position.x > -8;
+  }
+
+  public toggleFlashlight(id: string): void {
+    const player = this.requirePlayer(id);
+    if (!player.isAlive || this.state.matchPhase === "finished") {
+      return;
+    }
+    if (!player.inventory.includes("flashlight")) {
+      return;
+    }
+    player.flashlightOn = !player.flashlightOn;
   }
 
   public hasItem(playerId: string, itemId: ItemId): boolean {

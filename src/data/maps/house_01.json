@@ -2,17 +2,17 @@
   "id": "house_01",
   "name": "House 01",
   "spawnPoints": [
-    { "id": "spawn_1", "position": { "x": -10, "y": 1, "z": 0 } },
-    { "id": "spawn_2", "position": { "x": -11, "y": 1, "z": 1 } },
-    { "id": "spawn_3", "position": { "x": -11, "y": 1, "z": -1 } },
-    { "id": "spawn_4", "position": { "x": -12, "y": 1, "z": 0 } }
+    { "id": "spawn_1", "position": { "x": 0, "y": 1, "z": 0 } },
+    { "id": "spawn_2", "position": { "x": 1.5, "y": 1, "z": 0 } },
+    { "id": "spawn_3", "position": { "x": -1.5, "y": 1, "z": 0 } },
+    { "id": "spawn_4", "position": { "x": 0, "y": 1, "z": 1.5 } }
   ],
   "rooms": [
     {
       "id": "living_room",
       "name": "Living Room",
-      "center": { "x": 3, "y": 1, "z": 5 },
-      "radius": 4
+      "center": { "x": 0, "y": 1, "z": 0 },
+      "radius": 7
     },
     {
       "id": "bedroom",
@@ -23,7 +23,7 @@
   ],
   "doors": [
     {
-      "id": "front_door",
+      "id": "door_front",
       "roomA": "outside",
       "roomB": "living_room",
       "isLockedDuringHunt": true
@@ -49,9 +49,9 @@
   ],
   "hidingSpots": [
     {
-      "id": "closet_01",
-      "roomId": "bedroom",
-      "position": { "x": 5, "y": 1, "z": 8 }
+      "id": "hiding_closet_01",
+      "roomId": "living_room",
+      "position": { "x": -3, "y": 1, "z": 3 }
     }
   ],
   "evidenceSpots": [

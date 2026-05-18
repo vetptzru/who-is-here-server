@@ -16,11 +16,28 @@ export const setReadySchema = z.object({
 
 export const moveSchema = vectorSchema.extend({
   rotY: z.number(),
+  lookPitch: z.number().optional().default(0),
 });
+
+const interactionTypeEnum = z.enum(["use", "open", "close", "toggle", "pickup"]);
+
+function normalizeClientInteractionType(raw: string): string {
+  const legacy: Record<string, string> = {
+    interact: "use",
+    door: "toggle",
+    light_switch: "toggle",
+    hide: "use",
+    generator: "use",
+  };
+  return legacy[raw] ?? raw;
+}
 
 export const interactSchema = z.object({
   objectId: z.string().min(1),
-  interactionType: z.enum(["use", "open", "close", "toggle", "pickup"]),
+  interactionType: z
+    .string()
+    .transform(normalizeClientInteractionType)
+    .pipe(interactionTypeEnum),
 });
 
 export const useItemSchema = z.object({
