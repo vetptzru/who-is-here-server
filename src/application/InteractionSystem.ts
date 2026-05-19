@@ -43,10 +43,11 @@ export class InteractionSystem {
       return false;
     }
 
-    const room = this.state.map.rooms.find((item) => item.id === door.roomB || item.id === door.roomA);
-    if (room && !isWithinDistance(player.position, room.center, room.radius + this.maxDistance)) {
-      return false;
-    }
+    // TODO: make this better
+    // const room = this.state.map.rooms.find((item) => item.id === door.roomB || item.id === door.roomA);
+    // if (room && !isWithinDistance(player.position, room.center, room.radius + this.maxDistance)) {
+    //   return false;
+    // }
 
     if (door.isLocked) {
       return false;
@@ -65,10 +66,11 @@ export class InteractionSystem {
       return false;
     }
 
-    const room = this.state.map.rooms.find((item) => item.id === light.roomId);
-    if (room && !isWithinDistance(player.position, room.center, room.radius + this.maxDistance)) {
-      return false;
-    }
+    // TODO: make this better
+    // const room = this.state.map.rooms.find((item) => item.id === light.roomId);
+    // if (room && !isWithinDistance(player.position, room.center, room.radius + this.maxDistance)) {
+    //   return false;
+    // }
 
     light.isOn = !light.isOn;
     this.logger.info("Light interaction", { playerId: player.id, lightId: light.id, isOn: light.isOn });
