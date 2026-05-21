@@ -193,6 +193,61 @@ test("hunt system starts, locks door and kills target on contact", () => {
   assert.ok(events.emitted.includes("player_dead"));
 });
 
+test("hunt system does not start when all alive players are outside rooms", () => {
+  const state = createState();
+  const events = createEvents();
+  const clock = { nowMs: () => 1000 };
+  const matchController = new MatchController(state, events, logger);
+  const hunt = new HuntSystem(state, matchController, events, clock, new FakeRandom(), logger, {
+    durationSec: 45,
+    cooldownSec: 60,
+  });
+
+  const player = state.players.get("p1");
+  assert.ok(player);
+  player.isInHouse = false;
+
+  assert.equal(hunt.canStart(35), false);
+  assert.equal(hunt.start(), false);
+  assert.equal(state.matchPhase, "active");
+  assert.deepEqual(events.emitted, []);
+});
+
+test("hunt system can start when at least one alive player is inside room", () => {
+  const state = createState();
+  const events = createEvents();
+  const clock = { nowMs: () => 1000 };
+  const matchController = new MatchController(state, events, logger);
+  const hunt = new HuntSystem(state, matchController, events, clock, new FakeRandom(), logger, {
+    durationSec: 45,
+    cooldownSec: 60,
+  });
+
+  state.players.set("p2", {
+    id: "p2",
+    name: "Player 2",
+    position: { x: 100, y: 1, z: 100 },
+    rotY: 0,
+    lookPitch: 0,
+    sanity: 35,
+    isAlive: true,
+    isReady: true,
+    isInHouse: true,
+    inventory: ["flashlight"],
+    flashlightOn: false,
+  });
+
+  const player = state.players.get("p1");
+  assert.ok(player);
+  player.isInHouse = false;
+
+  assert.equal(hunt.canStart(35), true);
+  assert.equal(hunt.start(), true);
+  assert.equal(state.matchPhase, "hunt");
+  assert.equal(state.ghost.targetPlayerId, "p2");
+  assert.ok(events.emitted.includes("hunt_started"));
+});
+
 test("game session marks player as in-house by room radius on XZ", async () => {
   const mapRepository: MapRepository = {
     getById: async () => ({

@@ -5,14 +5,14 @@
     "evidencePool": ["emf", "freezing", "fingerprints"],
     "aggression": 4,
     "activity": 4,
-    "huntSanityThreshold": 98
+    "huntSanityThreshold": 90
   },
   {
     "id": "wraith",
     "name": "Wraith",
     "evidencePool": ["emf", "freezing", "fingerprints"],
-    "aggression": 2,
-    "activity": 2,
-    "huntSanityThreshold": 98
+    "aggression": 5,
+    "activity": 5,
+    "huntSanityThreshold": 90
   }
 ]
