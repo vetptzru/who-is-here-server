@@ -1,6 +1,7 @@
 import type { GameModel } from "../domain/models.js";
 import type { Clock, GameEventPublisher, Logger, RandomSource } from "../domain/ports.js";
 import type { GhostEventType } from "../domain/types.js";
+import { moveTowards } from "../domain/geometry.js";
 import { HuntSystem } from "./HuntSystem.js";
 import { SanitySystem } from "./SanitySystem.js";
 
@@ -19,6 +20,7 @@ const eventTypes: GhostEventType[] = [
 
 export class GhostDirector {
   private nextEventAtMs = 0;
+  private roamingTarget: { x: number; y: number; z: number } | null = null;
 
   public constructor(
     private readonly state: GameModel,
@@ -33,10 +35,12 @@ export class GhostDirector {
     this.nextEventAtMs = this.clock.nowMs() + this.config.ghostEventIntervalMs;
   }
 
-  public tick(): void {
+  public tick(dtSec: number): void {
     if (this.state.matchPhase !== "active") {
       return;
     }
+
+    this.tickRoaming(dtSec);
 
     const avgSanity = this.sanitySystem.averageSanity();
     if (avgSanity < 70) {
@@ -52,6 +56,46 @@ export class GhostDirector {
     if (this.huntSystem.canStart(avgSanity)) {
       this.huntSystem.start();
     }
+  }
+
+  private tickRoaming(dtSec: number): void {
+    if (!this.state.map || this.state.ghost.state === "hunt") {
+      return;
+    }
+
+    if (!this.roamingTarget) {
+      this.roamingTarget = this.pickRoamingTarget();
+    }
+
+    const speedPerSec = 0.7 + this.state.ghost.activity * 0.12;
+    this.state.ghost.position = moveTowards(this.state.ghost.position, this.roamingTarget, speedPerSec * dtSec);
+
+    const dx = this.state.ghost.position.x - this.roamingTarget.x;
+    const dz = this.state.ghost.position.z - this.roamingTarget.z;
+    const reached = dx * dx + dz * dz <= 0.3 * 0.3;
+    if (reached) {
+      this.roamingTarget = this.pickRoamingTarget();
+    }
+  }
+
+  private pickRoamingTarget(): { x: number; y: number; z: number } {
+    if (!this.state.map || this.state.map.rooms.length === 0) {
+      return { ...this.state.ghost.position };
+    }
+
+    const useCurrentRoom = this.random.nextInt(100) < 75;
+    const room = useCurrentRoom
+      ? this.state.map.rooms.find((item) => item.id === this.state.ghost.roomId) ?? this.random.pick(this.state.map.rooms)
+      : this.random.pick(this.state.map.rooms);
+    this.state.ghost.roomId = room.id;
+
+    const angle = (this.random.nextInt(3600) / 3600) * Math.PI * 2;
+    const distance = (this.random.nextInt(1000) / 1000) * room.radius * 0.85;
+    return {
+      x: room.center.x + Math.cos(angle) * distance,
+      y: room.center.y,
+      z: room.center.z + Math.sin(angle) * distance,
+    };
   }
 
   private triggerGhostEvent(avgSanity: number): void {

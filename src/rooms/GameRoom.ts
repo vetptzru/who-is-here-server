@@ -164,7 +164,7 @@ export class GameRoom extends Room<GameState> {
   private tick(dtSec: number): void {
     this.matchController.tick(dtSec);
     this.sanitySystem.tick(dtSec);
-    this.ghostDirector.tick();
+    this.ghostDirector.tick(dtSec);
     this.huntSystem.tick(dtSec);
     this.sync();
     this.updateRegistry();
