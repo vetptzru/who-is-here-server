@@ -19,6 +19,12 @@ export class JsonMapRepository implements MapRepository {
       name: map.name,
       spawnPoints: map.spawnPoints.map((spawn) => ({ id: spawn.id, position: spawn.position })),
       rooms: map.rooms,
+      sanityZones: (map.sanityZones ?? []).map((zone) => ({
+        id: zone.id,
+        center: zone.center,
+        radius: zone.radius,
+        drainPerSec: zone.drainPerSec,
+      })),
       doors: map.doors.map((door) => ({ ...door, isOpen: false, isLocked: false })),
       lights: map.lights.map((light) => ({ ...light, isOn: true })),
       hidingSpots: map.hidingSpots,

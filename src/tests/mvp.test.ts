@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { GameSession } from "../application/GameSession.js";
 import { EvidenceSystem } from "../application/EvidenceSystem.js";
 import { HuntSystem } from "../application/HuntSystem.js";
 import { InteractionSystem } from "../application/InteractionSystem.js";
 import { MatchController } from "../application/MatchController.js";
 import { loadEnv } from "../config/env.js";
 import type { GameModel } from "../domain/models.js";
-import type { GameEventPublisher, Logger, RandomSource } from "../domain/ports.js";
+import type { GameEventPublisher, GhostTypeRepository, Logger, MapRepository, RandomSource } from "../domain/ports.js";
 import { moveSchema } from "../messages/clientMessages.js";
 
 const logger: Logger = {
@@ -113,6 +114,7 @@ const createState = (): GameModel => ({
     name: "House 01",
     spawnPoints: [{ id: "spawn_1", position: { x: 0, y: 1, z: 0 } }],
     rooms: [{ id: "living_room", name: "Living Room", center: { x: 0, y: 1, z: 0 }, radius: 7 }],
+    sanityZones: [{ id: "living_room_sanity_zone", center: { x: 0, y: 1, z: 0 }, radius: 10, drainPerSec: 0.2 }],
     doors: [],
     lights: [],
     hidingSpots: [],
@@ -189,4 +191,48 @@ test("hunt system starts, locks door and kills target on contact", () => {
   assert.equal(state.players.get("p1")?.isAlive, false);
   assert.ok(events.emitted.includes("hunt_started"));
   assert.ok(events.emitted.includes("player_dead"));
+});
+
+test("game session marks player as in-house by room radius on XZ", async () => {
+  const mapRepository: MapRepository = {
+    getById: async () => ({
+      id: "house_01",
+      name: "House 01",
+      spawnPoints: [{ id: "spawn_1", position: { x: 0, y: 1, z: 0 } }],
+      rooms: [{ id: "living_room", name: "Living Room", center: { x: 0, y: 100, z: 0 }, radius: 5 }],
+      sanityZones: [],
+      doors: [],
+      lights: [],
+      hidingSpots: [],
+      evidenceSpots: [],
+      exitZone: { id: "exit_zone", position: { x: -10, y: 1, z: 0 }, radius: 3 },
+    }),
+  };
+  const ghostTypeRepository: GhostTypeRepository = {
+    getAll: async () => [
+      {
+        id: "shade",
+        name: "Shade",
+        evidencePool: ["emf", "freezing", "fingerprints"],
+        aggression: 1,
+        activity: 1,
+        huntSanityThreshold: 40,
+      },
+    ],
+  };
+  const session = new GameSession({
+    mapId: "house_01",
+    mapRepository,
+    ghostTypeRepository,
+    random: new FakeRandom(),
+  });
+
+  session.addPlayer("p1", "Player");
+  await session.initialize();
+
+  session.movePlayer("p1", { x: 3, y: -999, z: 4 }, 0, 0);
+  assert.equal(session.snapshot.players.get("p1")?.isInHouse, true);
+
+  session.movePlayer("p1", { x: 6.5, y: 0, z: 0 }, 0, 0);
+  assert.equal(session.snapshot.players.get("p1")?.isInHouse, false);
 });

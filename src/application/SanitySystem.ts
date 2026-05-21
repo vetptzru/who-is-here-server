@@ -1,4 +1,5 @@
 import type { GameModel } from "../domain/models.js";
+import { isWithinDistance } from "../domain/geometry.js";
 
 export class SanitySystem {
   public constructor(private readonly state: GameModel) {}
@@ -18,9 +19,25 @@ export class SanitySystem {
       return;
     }
 
+    const sanityZones = this.state.map?.sanityZones ?? [];
+    if (sanityZones.length === 0) {
+      return;
+    }
+
     for (const player of this.state.players.values()) {
-      if (player.isAlive && player.isInHouse) {
-        player.sanity = Math.max(0, player.sanity - dtSec * 0.2);
+      if (!player.isAlive) {
+        continue;
+      }
+
+      let drainPerSec = 0;
+      for (const zone of sanityZones) {
+        if (isWithinDistance(player.position, zone.center, zone.radius)) {
+          drainPerSec = Math.max(drainPerSec, zone.drainPerSec);
+        }
+      }
+
+      if (drainPerSec > 0) {
+        player.sanity = Math.max(0, player.sanity - dtSec * drainPerSec);
       }
     }
   }

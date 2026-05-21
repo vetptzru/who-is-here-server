@@ -80,7 +80,8 @@ export class HuntSystem {
     );
 
     if (isWithinDistance(this.state.ghost.position, target.position, this.contactDistance)) {
-      target.isAlive = false;
+      // TODO: revert after debug
+      //target.isAlive = false;
       this.events.playerDead({ playerId: target.id, reason: "ghost_contact" });
       this.logger.info("Player killed by ghost", { playerId: target.id });
       this.retarget();

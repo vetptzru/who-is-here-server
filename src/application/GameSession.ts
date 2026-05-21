@@ -87,7 +87,7 @@ export class GameSession {
     player.position = position;
     player.rotY = rotY;
     player.lookPitch = lookPitch;
-    player.isInHouse = position.x > -8;
+    player.isInHouse = this.isInsideAnyRoomXZ(position);
   }
 
   public toggleFlashlight(id: string): void {
@@ -150,5 +150,17 @@ export class GameSession {
     }
 
     return player;
+  }
+
+  private isInsideAnyRoomXZ(position: Vector3): boolean {
+    if (!this.state.map || this.state.map.rooms.length === 0) {
+      return false;
+    }
+
+    return this.state.map.rooms.some((room) => {
+      const dx = position.x - room.center.x;
+      const dz = position.z - room.center.z;
+      return dx * dx + dz * dz <= room.radius * room.radius;
+    });
   }
 }

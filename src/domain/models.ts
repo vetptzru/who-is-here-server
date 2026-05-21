@@ -57,6 +57,13 @@ export type MapRoom = {
   radius: number;
 };
 
+export type SanityZone = {
+  id: string;
+  center: Vector3;
+  radius: number;
+  drainPerSec: number;
+};
+
 export type HidingSpot = {
   id: string;
   roomId: string;
@@ -82,6 +89,7 @@ export type GameMap = {
   name: string;
   spawnPoints: Array<{ id: string; position: Vector3 }>;
   rooms: MapRoom[];
+  sanityZones: SanityZone[];
   doors: Door[];
   lights: Light[];
   hidingSpots: HidingSpot[];
