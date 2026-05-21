@@ -3,14 +3,16 @@
     "id": "shade",
     "name": "Shade",
     "evidencePool": ["emf", "freezing", "fingerprints"],
-    "aggression": 1,
-    "activity": 1
+    "aggression": 4,
+    "activity": 4,
+    "huntSanityThreshold": 97
   },
   {
     "id": "wraith",
     "name": "Wraith",
     "evidencePool": ["emf", "freezing", "fingerprints"],
     "aggression": 2,
-    "activity": 2
+    "activity": 2,
+    "huntSanityThreshold": 97
   }
 ]

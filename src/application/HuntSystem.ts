@@ -27,7 +27,7 @@ export class HuntSystem {
     return (
       this.state.matchPhase === "active" &&
       this.state.ghost.state !== "hunt" &&
-      avgSanity < 40 &&
+      avgSanity < this.state.ghost.huntSanityThreshold &&
       this.clock.nowMs() >= this.state.huntCooldownUntilMs &&
       this.livingPlayersInHouse().length > 0
     );

@@ -28,6 +28,7 @@ export type Ghost = {
   roomId: string;
   aggression: number;
   activity: number;
+  huntSanityThreshold: number;
   position: Vector3;
   targetPlayerId: string;
   evidence: EvidenceType[];
@@ -94,6 +95,7 @@ export type GhostTypeDefinition = {
   evidencePool: EvidenceType[];
   aggression: number;
   activity: number;
+  huntSanityThreshold: number;
 };
 
 export type GameModel = {

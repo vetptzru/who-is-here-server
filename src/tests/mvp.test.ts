@@ -76,6 +76,7 @@ const createState = (): GameModel => ({
     roomId: "living_room",
     aggression: 1,
     activity: 1,
+    huntSanityThreshold: 40,
     position: { x: 3, y: 1, z: 5 },
     targetPlayerId: "",
     evidence: ["emf", "freezing"],

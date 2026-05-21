@@ -11,14 +11,8 @@
     {
       "id": "living_room",
       "name": "Living Room",
-      "center": { "x": 0, "y": 1, "z": 0 },
-      "radius": 7
-    },
-    {
-      "id": "bedroom",
-      "name": "Bedroom",
-      "center": { "x": 8, "y": 1, "z": 8 },
-      "radius": 3
+      "center": { "x": -25, "y": 1, "z": 8 },
+      "radius": 9
     }
   ],
   "doors": [
@@ -27,12 +21,6 @@
       "roomA": "outside",
       "roomB": "living_room",
       "isLockedDuringHunt": true
-    },
-    {
-      "id": "bedroom_door",
-      "roomA": "living_room",
-      "roomB": "bedroom",
-      "isLockedDuringHunt": false
     }
   ],
   "lights": [
@@ -40,11 +28,6 @@
       "id": "living_room_light",
       "roomId": "living_room",
       "switchId": "living_room_switch"
-    },
-    {
-      "id": "bedroom_light",
-      "roomId": "bedroom",
-      "switchId": "bedroom_switch"
     }
   ],
   "hidingSpots": [
