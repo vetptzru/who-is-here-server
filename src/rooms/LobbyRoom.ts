@@ -17,6 +17,7 @@ export class LobbyRoom extends Room<LobbyState> {
       if (player) {
         player.name = message.name;
         this.updateRegistry();
+        this.emitLobbyState();
       }
     });
 
@@ -26,6 +27,7 @@ export class LobbyRoom extends Room<LobbyState> {
       if (player) {
         player.isReady = message.isReady;
         this.updateRegistry();
+        this.emitLobbyState();
       }
     });
 
@@ -41,6 +43,7 @@ export class LobbyRoom extends Room<LobbyState> {
     this.state.players.set(client.sessionId, player);
     this.dependencies.logger.info("Lobby player joined", { roomId: this.roomId, playerId: client.sessionId });
     this.updateRegistry();
+    this.emitLobbyState();
   }
 
   public onLeave(client: Client): void {
@@ -50,6 +53,7 @@ export class LobbyRoom extends Room<LobbyState> {
       firstPlayer.isHost = true;
     }
     this.updateRegistry();
+    this.emitLobbyState();
   }
 
   public onDispose(): void {
@@ -68,6 +72,7 @@ export class LobbyRoom extends Room<LobbyState> {
         ok: false,
         reason: this.getStartBlockedReason(client.sessionId),
       });
+      this.emitLobbyState();
       return;
     }
 
@@ -84,6 +89,23 @@ export class LobbyRoom extends Room<LobbyState> {
       })),
     });
     this.updateRegistry();
+    this.emitLobbyState();
+  }
+
+  private emitLobbyState(): void {
+    const players = Array.from(this.state.players.values()).map((player) => ({
+      sessionId: player.id,
+      name: player.name,
+      ready: player.isReady,
+    }));
+
+    this.clients.forEach((client) => {
+      client.send("lobby_state", {
+        players,
+        mapId: this.dependencies.env.DEFAULT_MAP_ID,
+        canStart: this.canStart(client.sessionId),
+      });
+    });
   }
 
   private getStartBlockedReason(clientId: string): string {
