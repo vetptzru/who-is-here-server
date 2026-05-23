@@ -45,6 +45,32 @@
       "position": { "x": -3, "y": 1, "z": 3 }
     }
   ],
+  "items": [
+    {
+      "id": "item_flashlight_01",
+      "itemId": "flashlight",
+      "position": { "x": -24, "y": 2, "z": 9 },
+      "rotationY": 0
+    },
+    {
+      "id": "item_emf_01",
+      "itemId": "emf",
+      "position": { "x": -26, "y": 2, "z": 9 },
+      "rotationY": 0
+    },
+    {
+      "id": "item_thermometer_01",
+      "itemId": "thermometer",
+      "position": { "x": -24, "y": 2, "z": 11 },
+      "rotationY": 0
+    },
+    {
+      "id": "item_camera_01",
+      "itemId": "camera",
+      "position": { "x": -26, "y": 2, "z": 11 },
+      "rotationY": 0
+    }
+  ],
   "evidenceSpots": [
     {
       "id": "living_room_emf",

@@ -70,6 +70,15 @@ export type HidingSpot = {
   position: Vector3;
 };
 
+export type WorldItem = {
+  id: string;
+  itemId: ItemId;
+  position: Vector3;
+  rotationY: number;
+  state: "world" | "held";
+  holderPlayerId?: string;
+};
+
 export type EvidenceSpot = {
   id: string;
   roomId: string;
@@ -93,6 +102,7 @@ export type GameMap = {
   doors: Door[];
   lights: Light[];
   hidingSpots: HidingSpot[];
+  items: WorldItem[];
   evidenceSpots: EvidenceSpot[];
   exitZone: { id: string; position: Vector3; radius: number };
 };
@@ -111,6 +121,7 @@ export type GameModel = {
   ghost: Ghost;
   doors: Map<string, Door>;
   lights: Map<string, Light>;
+  worldItems: Map<string, WorldItem>;
   matchPhase: MatchPhase;
   matchTimeSec: number;
   mapId: string;

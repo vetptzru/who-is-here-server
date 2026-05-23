@@ -1,10 +1,12 @@
-import type { GameModel, MapObject, Player } from "../domain/models.js";
+import type { GameModel, MapObject, Player, WorldItem } from "../domain/models.js";
 import { isWithinDistance } from "../domain/geometry.js";
 import type { Logger } from "../domain/ports.js";
-import type { InteractionType } from "../domain/types.js";
+import type { InteractionType, Vector3 } from "../domain/types.js";
 
 export class InteractionSystem {
   private readonly maxDistance = 3;
+  private readonly inventoryCapacity = 4;
+  private readonly minHorizontalSurfaceY = 0.85;
 
   public constructor(
     private readonly state: GameModel,
@@ -31,6 +33,62 @@ export class InteractionSystem {
     }
 
     return this.tryMapObject(player, objectId, interactionType);
+  }
+
+  public dropActiveItem(playerId: string, slotIndex?: number): boolean {
+    const player = this.state.players.get(playerId);
+    if (!player || !this.canInteract(player) || player.inventory.length === 0) {
+      return false;
+    }
+
+    const index = this.resolveSlotIndex(player, slotIndex);
+    if (index < 0) {
+      return false;
+    }
+    const itemId = player.inventory[index];
+    const worldItem = this.findHeldItem(player.id, itemId);
+    if (!worldItem) {
+      return false;
+    }
+
+    const position = this.calculateDropPosition(player);
+    player.inventory.splice(index, 1);
+    this.putWorldItem(worldItem, position, player.rotY);
+    this.logger.info("Item dropped", { playerId, worldItemId: worldItem.id, itemId: worldItem.itemId });
+    return true;
+  }
+
+  public placeItem(
+    playerId: string,
+    payload: { x: number; y: number; z: number; rotY: number; normalY: number; slotIndex?: number },
+  ): boolean {
+    const player = this.state.players.get(playerId);
+    if (!player || !this.canInteract(player) || player.inventory.length === 0) {
+      return false;
+    }
+    if (payload.normalY < this.minHorizontalSurfaceY) {
+      return false;
+    }
+
+    const placePosition: Vector3 = { x: payload.x, y: payload.y, z: payload.z };
+    if (!isWithinDistance(player.position, placePosition, this.maxDistance + 0.5)) {
+      return false;
+    }
+
+    const slotIndex = this.resolveSlotIndex(player, payload.slotIndex);
+    if (slotIndex < 0) {
+      return false;
+    }
+    const itemId = player.inventory[slotIndex];
+    const worldItem = this.findHeldItem(player.id, itemId);
+    if (!worldItem) {
+      return false;
+    }
+
+    player.inventory.splice(slotIndex, 1);
+    this.putWorldItem(worldItem, placePosition, payload.rotY);
+    this.logger.info("Item placed", { playerId, worldItemId: worldItem.id, itemId: worldItem.itemId });
+    return true;
   }
 
   private canInteract(player: Player): boolean {
@@ -92,8 +150,7 @@ export class InteractionSystem {
     }
 
     if (object.kind === "item" && interactionType === "pickup") {
-      this.logger.info("Item pickup placeholder", { playerId: player.id, objectId });
-      return true;
+      return this.tryPickupItem(player, objectId);
     }
 
     if (object.kind === "hiding_spot" && interactionType === "use") {
@@ -120,6 +177,67 @@ export class InteractionSystem {
       return { id: evidenceSpot.id, kind: "evidence_spot", roomId: evidenceSpot.roomId, position: evidenceSpot.position };
     }
 
+    const worldItem = this.state.worldItems.get(objectId);
+    if (worldItem && worldItem.state === "world") {
+      return { id: worldItem.id, kind: "item", position: worldItem.position };
+    }
+
     return undefined;
+  }
+
+  private tryPickupItem(player: Player, objectId: string): boolean {
+    const worldItem = this.state.worldItems.get(objectId);
+    if (!worldItem || worldItem.state !== "world") {
+      return false;
+    }
+    if (!isWithinDistance(player.position, worldItem.position, this.maxDistance)) {
+      return false;
+    }
+    if (player.inventory.length >= this.inventoryCapacity) {
+      this.logger.info("Pickup blocked: inventory full", { playerId: player.id, objectId });
+      return false;
+    }
+
+    player.inventory.push(worldItem.itemId);
+    worldItem.state = "held";
+    worldItem.holderPlayerId = player.id;
+    this.logger.info("Item picked up", { playerId: player.id, worldItemId: worldItem.id, itemId: worldItem.itemId });
+    return true;
+  }
+
+  private findHeldItem(playerId: string, itemId: string): WorldItem | undefined {
+    return Array.from(this.state.worldItems.values()).find(
+      (item) => item.state === "held" && item.holderPlayerId === playerId && item.itemId === itemId,
+    );
+  }
+
+  private calculateDropPosition(player: Player): Vector3 {
+    const yaw = (player.rotY * Math.PI) / 180;
+    const offset = 1.15;
+    return {
+      x: player.position.x + Math.sin(yaw) * offset,
+      y: player.position.y,
+      z: player.position.z + Math.cos(yaw) * offset,
+    };
+  }
+
+  private putWorldItem(item: WorldItem, position: Vector3, rotationY: number): void {
+    item.state = "world";
+    item.holderPlayerId = undefined;
+    item.position = { ...position };
+    item.rotationY = rotationY;
+  }
+
+  private resolveSlotIndex(player: Player, slotIndex?: number): number {
+    if (player.inventory.length === 0) {
+      return -1;
+    }
+    if (slotIndex == null) {
+      return player.inventory.length - 1;
+    }
+    if (slotIndex < 0 || slotIndex >= player.inventory.length) {
+      return -1;
+    }
+    return slotIndex;
   }
 }

@@ -3,6 +3,7 @@ import { DoorState } from "./DoorState.js";
 import { GameState } from "./GameState.js";
 import { LightState } from "./LightState.js";
 import { PlayerState } from "./PlayerState.js";
+import { WorldItemState } from "./WorldItemState.js";
 
 export const syncGameState = (target: GameState, source: GameModel): void => {
   target.matchPhase = source.matchPhase;
@@ -63,5 +64,24 @@ export const syncGameState = (target: GameState, source: GameModel): void => {
     state.switchId = light.switchId;
     state.isOn = light.isOn;
     target.lights.set(light.id, state);
+  }
+
+  for (const worldItemId of Array.from(target.worldItems.keys())) {
+    if (!source.worldItems.has(worldItemId)) {
+      target.worldItems.delete(worldItemId);
+    }
+  }
+
+  for (const worldItem of source.worldItems.values()) {
+    const state = target.worldItems.get(worldItem.id) ?? new WorldItemState();
+    state.id = worldItem.id;
+    state.itemId = worldItem.itemId;
+    state.x = worldItem.position.x;
+    state.y = worldItem.position.y;
+    state.z = worldItem.position.z;
+    state.rotationY = worldItem.rotationY;
+    state.state = worldItem.state;
+    state.holderPlayerId = worldItem.holderPlayerId ?? "";
+    target.worldItems.set(worldItem.id, state);
   }
 };

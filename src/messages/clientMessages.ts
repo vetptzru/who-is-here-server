@@ -53,6 +53,19 @@ export const requestEscapeSchema = z.object({
   confirm: z.boolean(),
 });
 
+export const dropItemSchema = z.object({
+  slotIndex: z.number().int().min(0).max(3).optional(),
+});
+
+export const placeItemSchema = z.object({
+  slotIndex: z.number().int().min(0).max(3).optional(),
+  x: z.number(),
+  y: z.number(),
+  z: z.number(),
+  rotY: z.number(),
+  normalY: z.number().min(-1).max(1),
+});
+
 export type SetNameMessage = z.infer<typeof setNameSchema>;
 export type SetReadyMessage = z.infer<typeof setReadySchema>;
 export type ClientMoveMessage = z.infer<typeof moveSchema>;
@@ -60,3 +73,5 @@ export type ClientInteractMessage = z.infer<typeof interactSchema>;
 export type ClientUseItemMessage = z.infer<typeof useItemSchema>;
 export type ClientSubmitEvidenceMessage = z.infer<typeof submitEvidenceSchema>;
 export type ClientRequestEscapeMessage = z.infer<typeof requestEscapeSchema>;
+export type ClientDropItemMessage = z.infer<typeof dropItemSchema>;
+export type ClientPlaceItemMessage = z.infer<typeof placeItemSchema>;

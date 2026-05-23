@@ -11,8 +11,10 @@ import { JsonMapRepository } from "../infrastructure/JsonMapRepository.js";
 import { SeededRandom } from "../infrastructure/SeededRandom.js";
 import { SystemClock } from "../infrastructure/SystemClock.js";
 import {
+  dropItemSchema,
   interactSchema,
   moveSchema,
+  placeItemSchema,
   requestEscapeSchema,
   setNameSchema,
   setReadySchema,
@@ -130,7 +132,10 @@ export class GameRoom extends Room<GameState> {
 
     this.onMessage("interact", (client, payload: unknown) => {
       const message = interactSchema.parse(payload);
-      this.interactionSystem.interact(client.sessionId, message.objectId, message.interactionType);
+      const ok = this.interactionSystem.interact(client.sessionId, message.objectId, message.interactionType);
+      if (!ok && message.interactionType === "pickup") {
+        client.send("action_rejected", { action: "pickup", reason: "pickup_failed_or_inventory_full" });
+      }
       this.sync();
     });
 
@@ -156,6 +161,24 @@ export class GameRoom extends Room<GameState> {
       const message = requestEscapeSchema.parse(payload);
       if (message.confirm) {
         this.matchController.finishMission(this.session.snapshot.discoveredEvidence);
+      }
+      this.sync();
+    });
+
+    this.onMessage("drop_item", (client, payload: unknown) => {
+      const message = dropItemSchema.parse(payload);
+      const ok = this.interactionSystem.dropActiveItem(client.sessionId, message.slotIndex);
+      if (!ok) {
+        client.send("action_rejected", { action: "drop_item", reason: "cannot_drop_item" });
+      }
+      this.sync();
+    });
+
+    this.onMessage("place_item", (client, payload: unknown) => {
+      const message = placeItemSchema.parse(payload);
+      const ok = this.interactionSystem.placeItem(client.sessionId, message);
+      if (!ok) {
+        client.send("action_rejected", { action: "place_item", reason: "invalid_placement" });
       }
       this.sync();
     });

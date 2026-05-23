@@ -28,6 +28,7 @@ export class GameSession {
       },
       doors: new Map(),
       lights: new Map(),
+      worldItems: new Map(),
       matchPhase: "waiting",
       matchTimeSec: 0,
       mapId: options.mapId,
@@ -53,7 +54,7 @@ export class GameSession {
       isAlive: true,
       isReady: false,
       isInHouse: false,
-      inventory: ["flashlight", "emf", "thermometer", "camera"],
+      inventory: [],
       flashlightOn: false,
     };
 
@@ -117,6 +118,17 @@ export class GameSession {
     this.state.mapId = map.id;
     this.state.doors = new Map(map.doors.map((door) => [door.id, { ...door }]));
     this.state.lights = new Map(map.lights.map((light) => [light.id, { ...light }]));
+    this.state.worldItems = new Map(
+      map.items.map((item) => [
+        item.id,
+        {
+          ...item,
+          position: { ...item.position },
+          state: "world",
+          holderPlayerId: undefined,
+        },
+      ]),
+    );
     this.state.ghost = {
       ghostType: ghostType.id,
       state: "idle",

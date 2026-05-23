@@ -106,6 +106,7 @@ const createState = (): GameModel => ({
       },
     ],
   ]),
+  worldItems: new Map(),
   matchPhase: "active",
   matchTimeSec: 0,
   mapId: "house_01",
@@ -118,6 +119,7 @@ const createState = (): GameModel => ({
     doors: [],
     lights: [],
     hidingSpots: [],
+    items: [],
     evidenceSpots: [
       {
         id: "living_room_emf",
@@ -259,6 +261,7 @@ test("game session marks player as in-house by room radius on XZ", async () => {
       doors: [],
       lights: [],
       hidingSpots: [],
+      items: [],
       evidenceSpots: [],
       exitZone: { id: "exit_zone", position: { x: -10, y: 1, z: 0 }, radius: 3 },
     }),
