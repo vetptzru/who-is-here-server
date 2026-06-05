@@ -5,6 +5,9 @@ import { EvidenceSystem } from "../application/EvidenceSystem.js";
 import { HuntSystem } from "../application/HuntSystem.js";
 import { InteractionSystem } from "../application/InteractionSystem.js";
 import { MatchController } from "../application/MatchController.js";
+import { NavigationService } from "../application/NavigationService.js";
+import { GhostDirector } from "../application/GhostDirector.js";
+import { SanitySystem } from "../application/SanitySystem.js";
 import { loadEnv } from "../config/env.js";
 import type { GameModel } from "../domain/models.js";
 import type { GameEventPublisher, GhostTypeRepository, Logger, MapRepository, RandomSource } from "../domain/ports.js";
@@ -81,6 +84,7 @@ const createState = (): GameModel => ({
     position: { x: 3, y: 1, z: 5 },
     targetPlayerId: "",
     evidence: ["emf", "freezing"],
+    debugPath: [],
   },
   doors: new Map([
     [
@@ -293,4 +297,189 @@ test("game session marks player as in-house by room radius on XZ", async () => {
 
   session.movePlayer("p1", { x: 6.5, y: 0, z: 0 }, 0, 0);
   assert.equal(session.snapshot.players.get("p1")?.isInHouse, false);
+});
+
+test("navigation service finds path around blocked cells", () => {
+  const navigation = new NavigationService({
+    mapId: "house_01",
+    version: 1,
+    origin: { x: 0, z: 0 },
+    cellSize: 1,
+    width: 5,
+    height: 5,
+    blocked: [1, 6, 11, 16],
+    doorCells: {},
+    meta: { generatedAt: "2026-01-01T00:00:00.000Z", generatorVersion: 1, sceneName: "Game" },
+  });
+
+  const result = navigation.findPath({ x: 0.1, y: 1, z: 0.1 }, { x: 4.2, y: 1, z: 0.1 });
+  assert.equal(result.found, true);
+  assert.ok(result.gridPath.length > 5);
+  assert.equal(result.gridPath[0]?.x, 0);
+  assert.equal(result.gridPath[0]?.z, 0);
+});
+
+test("navigation service returns no_path for fully blocked route", () => {
+  const navigation = new NavigationService({
+    mapId: "house_01",
+    version: 1,
+    origin: { x: 0, z: 0 },
+    cellSize: 1,
+    width: 3,
+    height: 3,
+    blocked: [1, 4, 7],
+    doorCells: {},
+    meta: { generatedAt: "2026-01-01T00:00:00.000Z", generatorVersion: 1, sceneName: "Game" },
+  });
+
+  const result = navigation.findPath({ x: 0.1, y: 1, z: 1.1 }, { x: 2.1, y: 1, z: 1.1 });
+  assert.equal(result.found, false);
+  assert.equal(result.reason, "no_path");
+});
+
+test("navigation service converts world and grid coordinates", () => {
+  const navigation = new NavigationService({
+    mapId: "house_01",
+    version: 1,
+    origin: { x: -10, z: -10 },
+    cellSize: 0.5,
+    width: 20,
+    height: 20,
+    blocked: [],
+    doorCells: {},
+    meta: { generatedAt: "2026-01-01T00:00:00.000Z", generatorVersion: 1, sceneName: "Game" },
+  });
+
+  const grid = navigation.worldToGrid({ x: -9.1, y: 1, z: -9.1 });
+  assert.deepEqual(grid, { x: 1, z: 1 });
+
+  const world = navigation.gridToWorld({ x: 1, z: 1 }, 2);
+  assert.deepEqual(world, { x: -9.25, y: 2, z: -9.25 });
+});
+
+test("navigation service updates passability from door cells", () => {
+  const navigation = new NavigationService({
+    mapId: "house_01",
+    version: 1,
+    origin: { x: 0, z: 0 },
+    cellSize: 1,
+    width: 3,
+    height: 3,
+    blocked: [],
+    doorCells: {
+      door_a: [4],
+    },
+    meta: { generatedAt: "2026-01-01T00:00:00.000Z", generatorVersion: 1, sceneName: "Game" },
+  });
+
+  const beforeClose = navigation.findPath({ x: 0.1, y: 1, z: 1.1 }, { x: 2.1, y: 1, z: 1.1 });
+  assert.equal(beforeClose.found, true);
+
+  navigation.setDoorBlockedCells("door_a", true);
+  const afterClose = navigation.findPath({ x: 0.1, y: 1, z: 1.1 }, { x: 2.1, y: 1, z: 1.1 });
+  assert.equal(afterClose.found, true);
+  assert.ok(afterClose.gridPath.every((cell) => !(cell.x === 1 && cell.z === 1)));
+
+  navigation.setDoorBlockedCells("door_a", false);
+  const afterOpen = navigation.findPath({ x: 0.1, y: 1, z: 1.1 }, { x: 2.1, y: 1, z: 1.1 });
+  assert.equal(afterOpen.found, true);
+  assert.ok(afterOpen.gridPath.some((cell) => cell.x === 1 && cell.z === 1));
+});
+
+test("ghost director uses nav path for roaming when navgrid exists", () => {
+  const state = createState();
+  state.ghost.position = { x: 0.1, y: 1, z: 0.1 };
+  state.map = {
+    ...state.map!,
+    rooms: [{ id: "living_room", name: "Living Room", center: { x: 4.2, y: 1, z: 0.1 }, radius: 0.01 }],
+  };
+  state.navGrid = {
+    mapId: "house_01",
+    version: 1,
+    origin: { x: 0, z: 0 },
+    cellSize: 1,
+    width: 5,
+    height: 5,
+    blocked: [1],
+    doorCells: {},
+    meta: { generatedAt: "2026-01-01T00:00:00.000Z", generatorVersion: 1, sceneName: "Game" },
+  };
+
+  const sanity = new SanitySystem(state);
+  const huntStub = {
+    canStart: () => false,
+    start: () => false,
+  } as unknown as HuntSystem;
+  const clock = { nowMs: () => 1000 };
+  const events = createEvents();
+  const random = new FakeRandom();
+  const director = new GhostDirector(state, sanity, huntStub, events, clock, random, logger, {
+    ghostEventIntervalMs: 10_000,
+    repathIntervalMs: 250,
+  });
+
+  director.tick(1);
+
+  assert.ok(state.ghost.position.z > 0.1);
+});
+
+test("ghost director enters chase mode when nearby alive player is in house", () => {
+  const state = createState();
+  state.ghost.position = { x: 0, y: 1, z: 0 };
+  state.players.set("p1", {
+    ...state.players.get("p1")!,
+    position: { x: 2, y: 1, z: 0 },
+    isInHouse: true,
+    isAlive: true,
+  });
+
+  const sanity = new SanitySystem(state);
+  const huntStub = {
+    canStart: () => false,
+    start: () => false,
+  } as unknown as HuntSystem;
+  const clock = { nowMs: () => 1000 };
+  const director = new GhostDirector(state, sanity, huntStub, createEvents(), clock, new FakeRandom(), logger, {
+    ghostEventIntervalMs: 10_000,
+    chaseRange: 6,
+  });
+
+  director.tick(0.2);
+  assert.equal(state.ghost.state, "manifest");
+});
+
+test("ghost director switches to search after losing chase target", () => {
+  let now = 1000;
+  const state = createState();
+  state.ghost.position = { x: 0, y: 1, z: 0 };
+  state.players.set("p1", {
+    ...state.players.get("p1")!,
+    position: { x: 2, y: 1, z: 0 },
+    isInHouse: true,
+    isAlive: true,
+  });
+
+  const sanity = new SanitySystem(state);
+  const huntStub = {
+    canStart: () => false,
+    start: () => false,
+  } as unknown as HuntSystem;
+  const clock = { nowMs: () => now };
+  const director = new GhostDirector(state, sanity, huntStub, createEvents(), clock, new FakeRandom(), logger, {
+    ghostEventIntervalMs: 10_000,
+    chaseRange: 6,
+    searchDurationMs: 3000,
+  });
+
+  director.tick(0.2);
+  assert.equal(state.ghost.state, "manifest");
+
+  const p1 = state.players.get("p1");
+  assert.ok(p1);
+  p1.isInHouse = false;
+  p1.position = { x: 20, y: 1, z: 20 };
+  now += 100;
+
+  director.tick(0.2);
+  assert.equal(state.ghost.state, "light_activity");
 });

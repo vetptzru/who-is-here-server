@@ -8,6 +8,7 @@ import { MatchController } from "../application/MatchController.js";
 import { SanitySystem } from "../application/SanitySystem.js";
 import { JsonGhostTypeRepository } from "../infrastructure/JsonGhostTypeRepository.js";
 import { JsonMapRepository } from "../infrastructure/JsonMapRepository.js";
+import { JsonNavGridRepository } from "../infrastructure/JsonNavGridRepository.js";
 import { SeededRandom } from "../infrastructure/SeededRandom.js";
 import { SystemClock } from "../infrastructure/SystemClock.js";
 import {
@@ -47,10 +48,23 @@ export class GameRoom extends Room<GameState> {
     this.session = new GameSession({
       mapId: this.dependencies.env.DEFAULT_MAP_ID,
       mapRepository: new JsonMapRepository(),
+      navGridRepository: new JsonNavGridRepository(),
       ghostTypeRepository: new JsonGhostTypeRepository(),
       random,
     });
     await this.session.initialize();
+    if (this.session.snapshot.navGrid) {
+      this.dependencies.logger.info("Navgrid loaded", {
+        mapId: this.session.snapshot.navGrid.mapId,
+        version: this.session.snapshot.navGrid.version,
+        width: this.session.snapshot.navGrid.width,
+        height: this.session.snapshot.navGrid.height,
+      });
+    } else {
+      this.dependencies.logger.warn("Navgrid not found for map", {
+        mapId: this.dependencies.env.DEFAULT_MAP_ID,
+      });
+    }
 
     this.matchController = new MatchController(this.session.snapshot, eventPublisher, this.dependencies.logger);
     this.interactionSystem = new InteractionSystem(this.session.snapshot, this.dependencies.logger);

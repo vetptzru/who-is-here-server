@@ -46,6 +46,14 @@ export const syncGameState = (target: GameState, source: GameModel): void => {
   target.ghost.targetPlayerId = source.ghost.targetPlayerId;
   target.ghost.discoveredEvidence.clear();
   target.ghost.discoveredEvidence.push(...source.discoveredEvidence);
+  target.ghost.debugPathX.clear();
+  target.ghost.debugPathY.clear();
+  target.ghost.debugPathZ.clear();
+  for (const point of source.ghost.debugPath) {
+    target.ghost.debugPathX.push(point.x);
+    target.ghost.debugPathY.push(point.y);
+    target.ghost.debugPathZ.push(point.z);
+  }
 
   for (const door of source.doors.values()) {
     const state = target.doors.get(door.id) ?? new DoorState();

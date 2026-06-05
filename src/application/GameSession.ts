@@ -1,10 +1,11 @@
 import type { GameModel, GhostTypeDefinition, Player } from "../domain/models.js";
-import type { GhostTypeRepository, MapRepository, RandomSource } from "../domain/ports.js";
+import type { GhostTypeRepository, MapRepository, NavGridRepository, RandomSource } from "../domain/ports.js";
 import type { ItemId, Vector3 } from "../domain/types.js";
 
 export type GameSessionOptions = {
   mapId: string;
   mapRepository: MapRepository;
+  navGridRepository?: NavGridRepository;
   ghostTypeRepository: GhostTypeRepository;
   random: RandomSource;
 };
@@ -25,6 +26,7 @@ export class GameSession {
         position: { x: 0, y: 1, z: 0 },
         targetPlayerId: "",
         evidence: [],
+        debugPath: [],
       },
       doors: new Map(),
       lights: new Map(),
@@ -111,10 +113,17 @@ export class GameSession {
       this.options.mapRepository.getById(this.options.mapId),
       this.options.ghostTypeRepository.getAll(),
     ]);
+    const navGrid = this.options.navGridRepository
+      ? await this.options.navGridRepository.getByMapId(this.options.mapId)
+      : null;
+    if (navGrid && navGrid.mapId !== map.id) {
+      throw new Error(`Navgrid mapId mismatch: expected ${map.id}, got ${navGrid.mapId}`);
+    }
     const ghostType = this.pickGhostType(ghostTypes);
     const ghostRoom = this.options.random.pick(map.rooms);
 
     this.state.map = map;
+    this.state.navGrid = navGrid ?? undefined;
     this.state.mapId = map.id;
     this.state.doors = new Map(map.doors.map((door) => [door.id, { ...door }]));
     this.state.lights = new Map(map.lights.map((light) => [light.id, { ...light }]));
@@ -139,6 +148,7 @@ export class GameSession {
       position: { ...ghostRoom.center },
       targetPlayerId: "",
       evidence: this.options.random.pickMany(ghostType.evidencePool, 2),
+      debugPath: [],
     };
 
     for (const [index, player] of Array.from(this.state.players.values()).entries()) {

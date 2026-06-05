@@ -1,4 +1,4 @@
-import type { GameMap, GhostTypeDefinition } from "./models.js";
+import type { GameMap, GhostTypeDefinition, NavGrid } from "./models.js";
 import type { GhostEventType, HuntEndReason, Vector3 } from "./types.js";
 
 export interface Clock {
@@ -17,6 +17,10 @@ export interface MapRepository {
 
 export interface GhostTypeRepository {
   getAll(): Promise<GhostTypeDefinition[]>;
+}
+
+export interface NavGridRepository {
+  getByMapId(mapId: string): Promise<NavGrid | null>;
 }
 
 export interface GameEventPublisher {

@@ -32,6 +32,7 @@ export type Ghost = {
   position: Vector3;
   targetPlayerId: string;
   evidence: EvidenceType[];
+  debugPath: Vector3[];
 };
 
 export type Door = {
@@ -116,6 +117,25 @@ export type GhostTypeDefinition = {
   huntSanityThreshold: number;
 };
 
+export type NavGrid = {
+  mapId: string;
+  version: number;
+  origin: {
+    x: number;
+    z: number;
+  };
+  cellSize: number;
+  width: number;
+  height: number;
+  blocked: number[];
+  doorCells: Record<string, number[]>;
+  meta: {
+    generatedAt: string;
+    generatorVersion: number;
+    sceneName: string;
+  };
+};
+
 export type GameModel = {
   players: Map<string, Player>;
   ghost: Ghost;
@@ -126,6 +146,7 @@ export type GameModel = {
   matchTimeSec: number;
   mapId: string;
   map?: GameMap;
+  navGrid?: NavGrid;
   discoveredEvidence: EvidenceType[];
   activeHuntUntilMs: number;
   huntCooldownUntilMs: number;

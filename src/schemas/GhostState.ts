@@ -11,4 +11,7 @@ export class GhostState extends Schema {
   @type("number") public z = 0;
   @type("string") public targetPlayerId = "";
   @type(["string"]) public discoveredEvidence = new ArraySchema<string>();
+  @type(["number"]) public debugPathX = new ArraySchema<number>();
+  @type(["number"]) public debugPathY = new ArraySchema<number>();
+  @type(["number"]) public debugPathZ = new ArraySchema<number>();
 }
